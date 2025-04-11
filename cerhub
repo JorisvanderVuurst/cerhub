@@ -1,0 +1,659 @@
+-- CerluxHub Universal Script
+-- Created by CerluxHub
+
+-- Initialize Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+-- Local Player
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
+-- Global Settings
+_G.BoxESP = false
+_G.ShowNames = false
+_G.TeamColors = false
+_G.HitboxVisible = false
+_G.HitboxSize = 2
+_G.HitboxTransparency = 0.5
+
+-- ESP Storage
+local ESPStorage = {}
+
+-- GUI Creation
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "CerluxHubGUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+if syn then
+    syn.protect_gui(ScreenGui)
+end
+ScreenGui.Parent = game.CoreGui
+
+-- Main Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 600, 0, 350)
+MainFrame.Position = UDim2.new(0.5, -300, 0.5, -175)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+MainFrame.Visible = false -- Start hidden
+
+-- Title Bar
+local TitleBar = Instance.new("Frame")
+TitleBar.Name = "TitleBar"
+TitleBar.Size = UDim2.new(1, 0, 0, 30)
+TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = MainFrame
+
+-- Title
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(1, -30, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = 1
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 18
+Title.Font = Enum.Font.SourceSansBold
+Title.Text = "CerluxHub Universal"
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TitleBar
+
+-- Close Button
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -30, 0, 0)
+CloseButton.BackgroundTransparency = 1
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextSize = 18
+CloseButton.Font = Enum.Font.SourceSansBold
+CloseButton.Text = "X"
+CloseButton.Parent = TitleBar
+
+-- Tab Container
+local TabContainer = Instance.new("Frame")
+TabContainer.Name = "TabContainer"
+TabContainer.Size = UDim2.new(0, 150, 1, -30)
+TabContainer.Position = UDim2.new(0, 0, 0, 30)
+TabContainer.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+TabContainer.BorderSizePixel = 0
+TabContainer.Parent = MainFrame
+
+-- Content Container
+local ContentContainer = Instance.new("Frame")
+ContentContainer.Name = "ContentContainer"
+ContentContainer.Size = UDim2.new(1, -150, 1, -30)
+ContentContainer.Position = UDim2.new(0, 150, 0, 30)
+ContentContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+ContentContainer.BorderSizePixel = 0
+ContentContainer.Parent = MainFrame
+
+-- Create Tabs
+local tabs = {
+    {name = "Cersix", color = Color3.fromRGB(255, 100, 100)},
+    {name = "Basic ESP", color = Color3.fromRGB(100, 255, 100)},
+    {name = "Hitbox Extender", color = Color3.fromRGB(100, 100, 255)},
+    {name = "Basic Utilities", color = Color3.fromRGB(255, 255, 100)},
+    {name = "Info", color = Color3.fromRGB(255, 100, 255)},
+    {name = "Scripts", color = Color3.fromRGB(100, 255, 255)},
+    {name = "Cerlux Scripts", color = Color3.fromRGB(255, 150, 150)}
+}
+
+-- Create tab buttons and frames
+local tabButtons = {}
+local tabFrames = {}
+local selectedTab = nil
+
+local function switchTab(index)
+    if selectedTab then
+        -- Deselect current tab
+        tabButtons[selectedTab].BackgroundTransparency = 1
+        tabFrames[selectedTab].Visible = false
+    end
+    
+    -- Select new tab
+    tabButtons[index].BackgroundTransparency = 0.8
+    tabFrames[index].Visible = true
+    selectedTab = index
+end
+
+-- Create tab buttons
+for i, tab in ipairs(tabs) do
+    -- Create button
+    local button = Instance.new("TextButton")
+    button.Name = tab.name .. "Button"
+    button.Size = UDim2.new(1, 0, 0, 40)
+    button.Position = UDim2.new(0, 0, 0, (i-1) * 45)
+    button.BackgroundColor3 = tab.color
+    button.BackgroundTransparency = 1
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.TextSize = 14
+    button.Font = Enum.Font.SourceSansBold
+    button.Text = tab.name
+    button.Parent = TabContainer
+    
+    -- Create content frame
+    local frame = Instance.new("ScrollingFrame")
+    frame.Name = tab.name .. "Frame"
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundTransparency = 1
+    frame.ScrollBarThickness = 4
+    frame.Visible = false
+    frame.CanvasSize = UDim2.new(0, 0, 2, 0) -- Make scrollable
+    frame.Parent = ContentContainer
+    
+    -- Store references
+    tabButtons[i] = button
+    tabFrames[i] = frame
+    
+    -- Click handler
+    button.MouseButton1Click:Connect(function()
+        switchTab(i)
+    end)
+end
+
+-- Helper function to create text labels
+local function createLabel(parent, text, position)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.8, 0, 0, 30)
+    label.Position = position
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 14
+    label.Font = Enum.Font.SourceSansSemibold
+    label.Text = text
+    label.TextWrapped = true
+    label.Parent = parent
+    return label
+end
+
+-- Helper function to create toggles
+local function createToggle(parent, text, position, callback)
+    local toggle = Instance.new("TextButton")
+    toggle.Size = UDim2.new(0.8, 0, 0, 30)
+    toggle.Position = position
+    toggle.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    toggle.BorderSizePixel = 0
+    toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggle.TextSize = 14
+    toggle.Font = Enum.Font.SourceSansSemibold
+    toggle.Text = text
+    toggle.Parent = parent
+    
+    local enabled = false
+    
+    toggle.MouseButton1Click:Connect(function()
+        enabled = not enabled
+        toggle.BackgroundColor3 = enabled and Color3.fromRGB(60, 60, 65) or Color3.fromRGB(40, 40, 45)
+        callback(enabled)
+    end)
+    
+    return toggle
+end
+
+-- Helper function to create script buttons
+local function createScriptButton(parent, text, position, loadstring)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0.8, 0, 0, 30)
+    button.Position = position
+    button.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    button.BorderSizePixel = 0
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.TextSize = 14
+    button.Font = Enum.Font.SourceSansSemibold
+    button.Text = text
+    button.Parent = parent
+    
+    button.MouseButton1Click:Connect(function()
+        pcall(loadstring)
+    end)
+    
+    return button
+end
+
+-- Helper function to create sliders
+local function createSlider(parent, text, position, min, max, default, callback)
+    local sliderFrame = Instance.new("Frame")
+    sliderFrame.Size = UDim2.new(0.8, 0, 0, 50)
+    sliderFrame.Position = position
+    sliderFrame.BackgroundTransparency = 1
+    sliderFrame.Parent = parent
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0, 20)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 14
+    label.Font = Enum.Font.SourceSansSemibold
+    label.Text = text .. ": " .. default
+    label.Parent = sliderFrame
+    
+    local sliderBG = Instance.new("Frame")
+    sliderBG.Size = UDim2.new(1, 0, 0, 4)
+    sliderBG.Position = UDim2.new(0, 0, 0.7, 0)
+    sliderBG.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    sliderBG.BorderSizePixel = 0
+    sliderBG.Parent = sliderFrame
+    
+    local sliderFill = Instance.new("Frame")
+    sliderFill.Size = UDim2.new((default - min)/(max - min), 0, 1, 0)
+    sliderFill.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+    sliderFill.BorderSizePixel = 0
+    sliderFill.Parent = sliderBG
+    
+    local isDragging = false
+    
+    sliderBG.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isDragging = true
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isDragging = false
+        end
+    end)
+    
+    sliderBG.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement and isDragging then
+            local relativeX = math.clamp((input.Position.X - sliderBG.AbsolutePosition.X) / sliderBG.AbsoluteSize.X, 0, 1)
+            local value = math.floor(min + ((max - min) * relativeX))
+            
+            sliderFill.Size = UDim2.new(relativeX, 0, 1, 0)
+            label.Text = text .. ": " .. value
+            callback(value)
+        end
+    end)
+    
+    return sliderFrame
+end
+
+-- Populate Cersix Tab
+local cersixFrame = tabFrames[1]
+createLabel(cersixFrame, "Thanks for using CerluxHub! Enjoy your experience!", UDim2.new(0.1, 0, 0, 20))
+
+-- Populate ESP Tab
+local espFrame = tabFrames[2]
+
+createToggle(espFrame, "Box ESP", UDim2.new(0.1, 0, 0, 20), function(enabled)
+    _G.BoxESP = enabled
+    if not enabled then
+        for _, esp in pairs(ESPStorage) do
+            if esp.box then esp.box:Remove() end
+            if esp.name then esp.name:Remove() end
+        end
+        ESPStorage = {}
+    end
+end)
+
+createToggle(espFrame, "Show Names", UDim2.new(0.1, 0, 0, 70), function(enabled)
+    _G.ShowNames = enabled
+end)
+
+createToggle(espFrame, "Team Colors", UDim2.new(0.1, 0, 0, 120), function(enabled)
+    _G.TeamColors = enabled
+end)
+
+-- Populate Hitbox Extender Tab
+local hitboxFrame = tabFrames[3]
+createScriptButton(hitboxFrame, "Open Hitbox Extender", UDim2.new(0.1, 0, 0, 20), function()
+    -- Function to create GUI
+    local function createHitboxGui()
+        -- Check if GUI already exists and remove it to avoid duplicates
+        if game.Players.LocalPlayer.PlayerGui:FindFirstChild("HitboxGui") then
+            game.Players.LocalPlayer.PlayerGui:FindFirstChild("HitboxGui"):Destroy()
+        end
+
+        -- Create GUI
+        local ScreenGui = Instance.new("ScreenGui")
+        ScreenGui.Name = "HitboxGui"
+        ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+        local Frame = Instance.new("Frame")
+        Frame.Parent = ScreenGui
+        Frame.Size = UDim2.new(0, 200, 0, 100)
+        Frame.Position = UDim2.new(0, 10, 1, -110)
+        Frame.AnchorPoint = Vector2.new(0, 1)
+        Frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)  -- Dark gray background
+        Frame.BorderSizePixel = 0
+        Frame.BackgroundTransparency = 0.2
+        Frame.Active = true
+
+        local TextBox = Instance.new("TextBox")
+        TextBox.Parent = Frame
+        TextBox.Size = UDim2.new(1, -10, 0.4, -5)
+        TextBox.Position = UDim2.new(0, 5, 0, 5)
+        TextBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  -- White background
+        TextBox.TextColor3 = Color3.fromRGB(0, 0, 0)  -- Black text
+        TextBox.Text = "Enter hitbox size"
+        TextBox.ClearTextOnFocus = true
+
+        local TeamButton = Instance.new("TextButton")
+        TeamButton.Parent = Frame
+        TeamButton.Size = UDim2.new(1, -10, 0.4, -5)
+        TeamButton.Position = UDim2.new(0, 5, 0.5, 5)
+        TeamButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)  -- Darker gray background
+        TeamButton.TextColor3 = Color3.fromRGB(255, 255, 255)  -- White text
+        TeamButton.Text = "Toggle Team Check"
+
+        local TextLabel = Instance.new("TextLabel")
+        TextLabel.Parent = Frame
+        TextLabel.Size = UDim2.new(1, -10, 0.2, -5)
+        TextLabel.Position = UDim2.new(0, 5, 0.9, 5)
+        TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  -- White background
+        TextLabel.TextColor3 = Color3.fromRGB(0, 0, 0)  -- Black text
+        TextLabel.Text = "Hitbox Size: 1"
+        TextLabel.TextScaled = true
+
+        -- Handle Input
+        local hitboxSize = 1
+        local teamCheck = false
+
+        TextBox.FocusLost:Connect(function(enterPressed)
+            if enterPressed then
+                local inputText = TextBox.Text
+                local inputNumber = tonumber(inputText)
+                if inputNumber then
+                    hitboxSize = inputNumber
+                    TextLabel.Text = "Hitbox Size: " .. hitboxSize
+
+                    -- Function to apply hitbox changes
+                    local function applyHitbox(player)
+                        if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                            if not teamCheck or (teamCheck and player.Team ~= game.Players.LocalPlayer.Team) then
+                                local hitbox = player.Character.HumanoidRootPart
+                                hitbox.Size = Vector3.new(hitboxSize, hitboxSize, hitboxSize)
+                                hitbox.Transparency = 0.75
+                                hitbox.CanCollide = false
+
+                                -- Add a visualizer
+                                if not hitbox:FindFirstChild("HitboxVisualizer") then
+                                    local hitboxVisualizer = Instance.new("SelectionBox")
+                                    hitboxVisualizer.Name = "HitboxVisualizer"
+                                    hitboxVisualizer.Adornee = hitbox
+                                    hitboxVisualizer.Parent = hitbox
+                                end
+                            end
+                        end
+                    end
+
+                    -- Apply hitbox changes to all current players
+                    for _, player in pairs(game.Players:GetPlayers()) do
+                        applyHitbox(player)
+                        -- Reapply hitbox changes on respawn
+                        player.CharacterAdded:Connect(function()
+                            wait(1) -- Optional: Wait for the character to load
+                            applyHitbox(player)
+                        end)
+                    end
+
+                    -- Reapply hitbox changes for new players joining the game
+                    game.Players.PlayerAdded:Connect(function(player)
+                        player.CharacterAdded:Connect(function()
+                            wait(1) -- Optional: Wait for the character to load
+                            applyHitbox(player)
+                        end)
+                    end)
+                else
+                    TextLabel.Text = "Invalid number"
+                end
+                TextBox.Text = ""
+            end
+        end)
+
+        -- Toggle team check
+        TeamButton.MouseButton1Click:Connect(function()
+            teamCheck = not teamCheck
+            TeamButton.Text = teamCheck and "Team Check: ON" or "Team Check: OFF"
+        end)
+    end
+
+    -- Initialize GUI on script load
+    createHitboxGui()
+
+    -- Recreate GUI when the player's character is added (handles respawns)
+    game.Players.LocalPlayer.CharacterAdded:Connect(function()
+        wait(1) -- Optional: Wait for the character to load
+        createHitboxGui()
+    end)
+end)
+
+createScriptButton(hitboxFrame, "Arsenal Hitbox Extender", UDim2.new(0.1, 0, 0, 70), function()
+    function getplrsname()
+        for i,v in pairs(game:GetChildren()) do
+            if v.ClassName == "Players" then
+                return v.Name
+            end
+        end
+    end
+    local players = getplrsname()
+    local plr = game[players].LocalPlayer
+    coroutine.resume(coroutine.create(function()
+        while wait(1) do
+            coroutine.resume(coroutine.create(function()
+                for _,v in pairs(game[players]:GetPlayers()) do
+                    if v.Name ~= plr.Name and v.Character then
+                        v.Character.RightUpperLeg.CanCollide = false
+                        v.Character.RightUpperLeg.Transparency = 10
+                        v.Character.RightUpperLeg.Size = Vector3.new(20,20,20)
+
+                        v.Character.LeftUpperLeg.CanCollide = false
+                        v.Character.LeftUpperLeg.Transparency = 10
+                        v.Character.LeftUpperLeg.Size = Vector3.new(20,20,20)
+
+                        v.Character.HeadHB.CanCollide = false
+                        v.Character.HeadHB.Transparency = 10
+                        v.Character.HeadHB.Size = Vector3.new(20,20,20)
+
+                        v.Character.HumanoidRootPart.CanCollide = false
+                        v.Character.HumanoidRootPart.Transparency = 0.5
+                        v.Character.HumanoidRootPart.Size = Vector3.new(20,20,20)
+                    end
+                end
+            end))
+        end
+    end))
+end)
+
+-- Populate Basic Utilities Tab
+local utilitiesFrame = tabFrames[4]
+createToggle(utilitiesFrame, "Infinite Jump", UDim2.new(0.1, 0, 0, 20), function(enabled)
+    _G.InfiniteJump = enabled
+end)
+
+createToggle(utilitiesFrame, "No Clip", UDim2.new(0.1, 0, 0, 70), function(enabled)
+    _G.NoClip = enabled
+end)
+
+-- Populate Info Tab
+local infoFrame = tabFrames[5]
+createLabel(infoFrame, "CerluxHub Universal v1.0", UDim2.new(0.1, 0, 0, 20))
+createLabel(infoFrame, "Created by CerluxHub Team", UDim2.new(0.1, 0, 0, 70))
+createLabel(infoFrame, "Press Right Shift to toggle GUI", UDim2.new(0.1, 0, 0, 120))
+
+-- Populate Scripts Tab
+local scriptsFrame = tabFrames[6]
+createScriptButton(scriptsFrame, "Infinite Yield", UDim2.new(0.1, 0, 0, 20), function()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
+end)
+
+-- Populate Cerlux Scripts Tab
+local cerluxScriptsFrame = tabFrames[7]
+createScriptButton(cerluxScriptsFrame, "CerluxHub Arsenal", UDim2.new(0.1, 0, 0, 20), function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/CerluxHub/Arsenal/main/Script.lua"))()
+end)
+
+createScriptButton(cerluxScriptsFrame, "Universal Aimbot and ESP", UDim2.new(0.1, 0, 0, 70), function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/JorisvanderVuurst/cerluxhub/refs/heads/main/main.lua"))()
+end)
+
+createScriptButton(cerluxScriptsFrame, "Basic ESP", UDim2.new(0.1, 0, 0, 120), function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/JorisvanderVuurst/esp/refs/heads/main/basic%20esp.lua"))()
+end)
+
+createScriptButton(cerluxScriptsFrame, "Car", UDim2.new(0.1, 0, 0, 170), function()
+    if game:GetService("Players").LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid").RigType == Enum.HumanoidRigType.R6 then
+        game:GetService("Players").LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid").WalkSpeed = 45
+        game:GetService("Players").LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid").JumpPower = 18
+        game:GetService("Players").LocalPlayer.Character.Animate.walk.WalkAnim.AnimationId = "rbxassetid://129342287"
+        game:GetService("Players").LocalPlayer.Character.Animate.run.RunAnim.AnimationId = "rbxassetid://129342287"
+        game:GetService("Players").LocalPlayer.Character.Animate.fall.FallAnim.AnimationId = "rbxassetid://129342287"
+        game:GetService("Players").LocalPlayer.Character.Animate.idle.Animation1.AnimationId = "rbxassetid://129342287"
+        game:GetService("Players").LocalPlayer.Character.Animate.idle.Animation2.AnimationId = "rbxassetid://129342287"
+        game:GetService("Players").LocalPlayer.Character.Animate.jump.JumpAnim.AnimationId = "rbxassetid://129342287"
+        for i, thing in pairs(game:GetService("Players").LocalPlayer.Character:GetDescendants()) do
+            if thing.ClassName == "Part" then
+                thing.CustomPhysicalProperties = PhysicalProperties.new(0.04, 0, 0)
+            end
+        end
+        local r6height = "-1.10"
+        game:GetService("Players").LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid").HipHeight = r6height
+    elseif game:GetService("Players").LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid").RigType == Enum.HumanoidRigType.R15 then
+        game:GetService("Players").LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid").WalkSpeed = 60
+        game:GetService("Players").LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid").JumpPower = 20
+        game:GetService("Players").LocalPlayer.Character.Animate.walk.WalkAnim.AnimationId = "rbxassetid://3360694441"
+        game:GetService("Players").LocalPlayer.Character.Animate.run.RunAnim.AnimationId = "rbxassetid://3360694441"
+        game:GetService("Players").LocalPlayer.Character.Animate.fall.FallAnim.AnimationId = "rbxassetid://3360694441"
+        game:GetService("Players").LocalPlayer.Character.Animate.idle.Animation1.AnimationId = "rbxassetid://3360694441"
+        game:GetService("Players").LocalPlayer.Character.Animate.idle.Animation2.AnimationId = "rbxassetid://3360694441"
+        game:GetService("Players").LocalPlayer.Character.Animate.jump.JumpAnim.AnimationId = "rbxassetid://3360694441"
+        for i, thing in pairs(game:GetService("Players").LocalPlayer.Character:GetDescendants()) do
+            if thing.ClassName == "MeshPart" then
+                thing.CustomPhysicalProperties = PhysicalProperties.new(0.04, 0, 0)
+            end
+        end
+        local r15height = "0.56"
+        game:GetService("Players").LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid").HipHeight = r15height
+    end
+end)
+
+-- ESP Functions
+local function createBoxESP(player)
+    if player == LocalPlayer then return end
+    
+    local esp = Drawing.new("Square")
+    esp.Thickness = 2
+    esp.Filled = false
+    esp.Transparency = 1
+    esp.Color = Color3.fromRGB(255, 0, 0)
+    
+    local nameEsp = Drawing.new("Text")
+    nameEsp.Size = 16
+    nameEsp.Center = true
+    nameEsp.Outline = true
+    nameEsp.OutlineColor = Color3.new(0, 0, 0)
+    nameEsp.Color = Color3.fromRGB(255, 255, 255)
+    nameEsp.Font = Drawing.Fonts.UI
+    
+    ESPStorage[player] = {
+        box = esp,
+        name = nameEsp
+    }
+end
+
+local function updateESP()
+    for player, esp in pairs(ESPStorage) do
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") then
+            local humanoidRootPart = player.Character.HumanoidRootPart
+            local vector, onScreen = workspace.CurrentCamera:WorldToViewportPoint(humanoidRootPart.Position)
+            
+            if onScreen and _G.BoxESP and player.Character.Humanoid.Health > 0 then
+                local rootPos = humanoidRootPart.Position
+                local headPos = player.Character.Head.Position
+                local height = (headPos - rootPos).magnitude * 2
+                
+                esp.box.Size = Vector2.new(height * 0.6, height)
+                esp.box.Position = Vector2.new(vector.X - esp.box.Size.X/2, vector.Y - esp.box.Size.Y/2)
+                esp.box.Visible = true
+                esp.box.Color = _G.TeamColors and player.TeamColor.Color or Color3.fromRGB(255, 0, 0)
+                
+                if _G.ShowNames then
+                    esp.name.Text = player.Name .. "\n[" .. math.floor(player.Character.Humanoid.Health) .. "/" .. player.Character.Humanoid.MaxHealth .. "]"
+                    esp.name.Position = Vector2.new(vector.X, vector.Y - esp.box.Size.Y/2 - 20)
+                    esp.name.Visible = true
+                else
+                    esp.name.Visible = false
+                end
+            else
+                esp.box.Visible = false
+                esp.name.Visible = false
+            end
+        else
+            esp.box.Visible = false
+            esp.name.Visible = false
+        end
+    end
+end
+
+-- Player Added/Removed Handlers
+Players.PlayerAdded:Connect(function(player)
+    createBoxESP(player)
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    if ESPStorage[player] then
+        ESPStorage[player].box:Remove()
+        ESPStorage[player].name:Remove()
+        ESPStorage[player] = nil
+    end
+end)
+
+-- Initialize ESP for existing players
+for _, player in ipairs(Players:GetPlayers()) do
+    createBoxESP(player)
+end
+
+-- Toggle GUI with Right Shift
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        MainFrame.Visible = not MainFrame.Visible
+    end
+end)
+
+-- Update ESP and Hitboxes
+RunService.RenderStepped:Connect(function()
+    if _G.BoxESP then
+        updateESP()
+    end
+    
+    -- Infinite Jump
+    if _G.InfiniteJump and UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+        local character = LocalPlayer.Character
+        if character then
+            local humanoid = character:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end
+    end
+    
+    -- No Clip
+    if _G.NoClip then
+        local character = LocalPlayer.Character
+        if character then
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end
+end)
+
+-- Initial tab selection
+switchTab(1)
+
+-- Notification on load
+game.StarterGui:SetCore("SendNotification", {
+    Title = "CerluxHub Universal",
+    Text = "Press Right Shift to toggle GUI!",
+    Duration = 5
+})
